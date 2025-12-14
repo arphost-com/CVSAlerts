@@ -1,5 +1,6 @@
-# BotPEASS (Docker)
-
+# BotPEASS (Docker) 
+Thanks to https://github.com/peass-ng/BotPEASS
+If you need support check out https://arphost.com
 BotPEASS is a CVE alerting tool that polls the **CIRCL CVE v5 (Vulnerability Lookup) API** and sends notifications when new or modified CVEs are published.
 
 This Dockerized version supports:
