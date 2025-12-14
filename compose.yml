@@ -1,0 +1,21 @@
+services:
+  botpeass:
+    build: .
+    container_name: botpeass
+    restart: "no"
+    environment:
+      # Optional (set only what you use)
+      VULNERS_API_KEY: ${VULNERS_API_KEY:-}
+      SLACK_WEBHOOK: ${SLACK_WEBHOOK:-}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      PUSHOVER_DEVICE_NAME: ${PUSHOVER_DEVICE_NAME:-}
+      PUSHOVER_USER_KEY: ${PUSHOVER_USER_KEY:-}
+      PUSHOVER_TOKEN: ${PUSHOVER_TOKEN:-}
+      NTFY_URL: ${NTFY_URL:-}
+      NTFY_TOPIC: ${NTFY_TOPIC:-}
+      NTFY_AUTH: ${NTFY_AUTH:-}
+    volumes:
+      - ./config:/app/config
+      - ./output:/app/output
