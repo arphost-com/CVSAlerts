@@ -303,8 +303,6 @@ Warnings like `cgi` or `audioop` deprecation are harmless and do not affect exec
 
 ---
 
-## License
-
-See the LICENSE file.
-
+## Join Discord to see live.
+https://discord.gg/F9ZM79Q8Cb
 ```
