@@ -32,6 +32,20 @@ jobs:
           NTFY_URL: ${{ secrets.NTFY_URL }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           NTFY_AUTH: ${{ secrets.NTFY_AUTH }}
+          EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_SUBJECT: ${{ secrets.EMAIL_SUBJECT }}
+          EMAIL_SEND_ON_EMPTY: ${{ secrets.EMAIL_SEND_ON_EMPTY }}
+          # SMTP
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_TLS: ${{ secrets.SMTP_TLS }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          # SendGrid
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+
 
       - name: Create local changes
         run: git add output/botpeas.json

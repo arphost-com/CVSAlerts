@@ -10,13 +10,11 @@ import smtplib
 from os.path import join
 from enum import Enum
 from discord import Webhook, RequestsWebhookAdapter
-
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import formataddr, parseaddr
 
 
-# CIRCL v5 vulnerability endpoint (works per your curl test)
+# CIRCL v5 vulnerability endpoint (working per your curl test)
 # Override if needed via env: CIRCL_API_URL
 CIRCL_LU_URL = os.getenv("CIRCL_API_URL", "https://cve.circl.lu/api/vulnerability/")
 
@@ -138,12 +136,13 @@ def _to_legacy_time(s: str) -> str:
     s = s.strip()
     if s.endswith("Z"):
         s = s[:-1]
+    # remove fractional seconds if present
     if "." in s:
         s = s.split(".", 1)[0]
     return s
 
 
-def get_cves(_tt_filter: Time_Type) -> dict:
+def get_cves(tt_filter: Time_Type) -> dict:
     """
     Fetch CVEs from CIRCL v5 vulnerability endpoint and normalize them to the legacy
     shape expected by the rest of this script:
@@ -232,6 +231,7 @@ def get_cves(_tt_filter: Time_Type) -> dict:
             "vulnerable_configuration": vuln_cfg,
         })
 
+    # Note: time filtering is performed later via filter_cves() using tt_filter keys.
     return {"results": results}
 
 
@@ -300,8 +300,18 @@ def is_prod_keyword_present(products: str):
         any(w.lower() in products.lower() for w in PRODUCT_KEYWORDS_I)
 
 
-def search_exploits(_cve: str) -> list:
-    """Given a CVE, search for public exploits (currently disabled)."""
+def search_exploits(cve: str) -> list:
+    """Given a CVE, search for public exploits (currently disabled like repo)."""
+    return []
+
+    # kept for future:
+    vulners_api_key = os.getenv('VULNERS_API_KEY')
+    if vulners_api_key:
+        vulners_api = vulners.Vulners(api_key=vulners_api_key)
+        cve_data = vulners_api.searchExploit(cve)
+        return [v['vhref'] for v in cve_data]
+    else:
+        print("VULNERS_API_KEY wasn't configured!")
     return []
 
 
@@ -401,8 +411,6 @@ def send_email_digest(subject: str, body: str):
       EMAIL_TO=recipient1@example.com,recipient2@example.com
 
     Optional:
-      EMAIL_FROM_NAME=Display Name
-      EMAIL_ENVELOPE_FROM=envelope-sender@example.com   (recommended for Postal)
       EMAIL_SUBJECT=custom subject
       EMAIL_SEND_ON_EMPTY=true|false (default false)
     """
@@ -410,25 +418,11 @@ def send_email_digest(subject: str, body: str):
     if not provider:
         return
 
-    email_from_raw = (os.getenv("EMAIL_FROM") or "").strip()
-    email_from_name = (os.getenv("EMAIL_FROM_NAME") or "").strip()
-    envelope_from = (os.getenv("EMAIL_ENVELOPE_FROM") or email_from_raw).strip()
+    email_from = (os.getenv("EMAIL_FROM") or "").strip()
     email_to = _parse_recipients(os.getenv("EMAIL_TO"))
 
-    if not email_from_raw or not email_to:
+    if not email_from or not email_to:
         print("EMAIL_FROM / EMAIL_TO not configured; skipping email.")
-        return
-
-    # Validate From is a real mailbox address
-    _, from_addr = parseaddr(email_from_raw)
-    if not from_addr or "@" not in from_addr:
-        print(f"Invalid EMAIL_FROM (must be full address): {email_from_raw!r}")
-        return
-
-    # Validate envelope sender too (Postal often checks MAIL FROM)
-    _, env_addr = parseaddr(envelope_from)
-    if not env_addr or "@" not in env_addr:
-        print(f"Invalid EMAIL_ENVELOPE_FROM (must be full address): {envelope_from!r}")
         return
 
     if not body.strip() and not _parse_bool(os.getenv("EMAIL_SEND_ON_EMPTY"), False):
@@ -446,7 +440,7 @@ def send_email_digest(subject: str, body: str):
             return
 
         msg = MIMEMultipart()
-        msg["From"] = formataddr((email_from_name, from_addr)) if email_from_name else from_addr
+        msg["From"] = email_from
         msg["To"] = ", ".join(email_to)
         msg["Subject"] = subject
         msg.attach(MIMEText(body, "plain", "utf-8"))
@@ -457,9 +451,7 @@ def send_email_digest(subject: str, body: str):
                 server.starttls()
             if smtp_user and smtp_pass:
                 server.login(smtp_user, smtp_pass)
-
-            # Use explicit envelope sender (MAIL FROM) for Postal compatibility
-            server.sendmail(env_addr, email_to, msg.as_string())
+            server.send_message(msg)
             server.quit()
             print("Email digest sent via SMTP.")
         except Exception as e:
@@ -471,16 +463,12 @@ def send_email_digest(subject: str, body: str):
             print("SENDGRID_API_KEY not configured; skipping SendGrid email.")
             return
 
-        from_obj = {"email": from_addr}
-        if email_from_name:
-            from_obj["name"] = email_from_name
-
         payload = {
             "personalizations": [{
                 "to": [{"email": e} for e in email_to],
                 "subject": subject
             }],
-            "from": from_obj,
+            "from": {"email": email_from},
             "content": [{"type": "text/plain", "value": body}]
         }
 
@@ -514,7 +502,10 @@ def send_slack_mesage(message: str, public_expls_msg: str):
 
     json_params = {
         "blocks": [
-            {"type": "section", "text": {"type": "mrkdwn", "text": message}},
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": message}
+            },
             {"type": "divider"}
         ]
     }
@@ -596,7 +587,11 @@ def send_ntfy_message(message: str, public_expls_msg: str):
 
     full_ntfy_url = f"{ntfy_url}/{ntfy_topic}"
 
-    headers = {"Title": "New CVE Alert", "Priority": "high"}
+    headers = {
+        "Title": "New CVE Alert",
+        "Priority": "high",
+    }
+
     if ntfy_auth:
         headers["Authorization"] = ntfy_auth
 
@@ -664,3 +659,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
