@@ -1,6 +1,3 @@
----
-
-````markdown
 # BotPEASS (Docker)
 
 Thanks to https://github.com/peass-ng/BotPEASS
