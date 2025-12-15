@@ -1,12 +1,3 @@
-
-* ✅ Documents **email (SMTP / SendGrid)** correctly
-* ✅ Matches the **actual behavior of the code**
-* ✅ Fixes formatting issues (mixed plain text / Markdown / separators)
-* ✅ Corrects the CIRCL API description to match reality
-* ✅ Keeps your wording and intent (not a rewrite-from-scratch)
-
-You can **replace your README.md entirely** with the following.
-
 ---
 
 ````markdown
